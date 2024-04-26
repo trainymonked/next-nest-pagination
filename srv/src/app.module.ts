@@ -1,27 +1,24 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from './users/users.module';
+import {TypeOrmModule} from "@nestjs/typeorm";
+import {UsersModule} from "./users/users.module";
+
+const pg = new URL(process.env.APP_PG_URL);
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('db_hostname'),
-        port: parseInt(configService.get('db_port')),
-        username: configService.get('db_username'),
-        password: configService.get('db_password'),
-        database: configService.get('db_database'),
-        autoLoadEntities: true,
-        // it is unsafe to use synchronize: true for schema synchronization on production
-        synchronize: false, // process.env.NODE_ENV === 'development',
-        logging: process.env.NODE_ENV === 'development',
-        useUTC: true,
-      }),
-      inject: [ConfigService],
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: pg.hostname,
+      port: parseInt(pg.port),
+      username: pg.username,
+      password: pg.password,
+      database: pg.pathname.slice(1),
+      ssl: pg.searchParams.get('sslmode') !== 'disable',
+      autoLoadEntities: true,
+      // it is unsafe to use synchronize: true for schema synchronization on production
+      synchronize: false, // process.env.NODE_ENV === 'development',
+      logging: process.env.NODE_ENV === 'development',
+      useUTC: true,
     }),
     UsersModule,
   ],
